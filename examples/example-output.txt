@@ -1,0 +1,4 @@
+Running the CLI on example-panel.json prints the schedule with per-phase totals:
+1-pole circuits rotate A, B, C (Lighting -> A, Receptacles -> B, Signage -> C, Kitchen -> A);
+the 3-pole RTU splits 5,400 VA as 1,800 VA per phase; the 2-pole water heater takes the AB pair at 2,250 VA per phase.
+Per-phase connected load: A 9,650 VA, B 5,490 VA, C 3,000 VA - the kind of imbalance this check exists to catch before the panel is ordered.

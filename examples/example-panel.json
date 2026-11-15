@@ -1,0 +1,52 @@
+{
+ "panel": {
+  "name": "LP-1",
+  "system": "208Y/120 V, 3-phase 4-wire",
+  "bus_a": 225,
+  "main": "225 A"
+ },
+ "circuits": [
+  {
+   "desc": "Lighting - sales floor",
+   "type": "Lighting",
+   "va": 3600,
+   "poles": 1,
+   "breaker": 20
+  },
+  {
+   "desc": "Receptacles - office",
+   "type": "Receptacle",
+   "va": 1440,
+   "poles": 1,
+   "breaker": 20
+  },
+  {
+   "desc": "RTU-1",
+   "type": "HVAC",
+   "va": 5400,
+   "poles": 3,
+   "breaker": 30
+  },
+  {
+   "desc": "Water heater",
+   "type": "Plumbing",
+   "va": 4500,
+   "poles": 2,
+   "breaker": 30
+  },
+  {
+   "desc": "Signage",
+   "type": "Lighting",
+   "va": 1200,
+   "poles": 1,
+   "breaker": 20
+  },
+  {
+   "desc": "Kitchen receptacles",
+   "type": "Receptacle",
+   "va": 2000,
+   "poles": 1,
+   "breaker": 20
+  }
+ ]
+}
