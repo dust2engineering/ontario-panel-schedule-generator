@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel Schedule Generator | Dust 2 Engineering Inc.</title>
+<style>
+:root{color-scheme:dark}
+body{background:#0e1116;color:#e6e9ee;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:24px;line-height:1.55}
+.wrap{max-width:860px;margin:0 auto}
+h1{font-size:1.55rem;line-height:1.25;margin:.2em 0 .1em}
+h2{font-size:1.15rem;margin-top:1.6em;color:#ffd479}
+.sub{color:#9fb0c3;margin:.2em 0 1.2em}
+.card{background:#161b22;border:1px solid #2b333f;border-radius:12px;padding:18px;margin:14px 0}
+label{display:block;margin:.7em 0 .25em;color:#c8d3e0;font-size:.95rem}
+input,select,textarea{width:100%;box-sizing:border-box;background:#0e1116;color:#e6e9ee;border:1px solid #39424f;border-radius:8px;padding:9px;font-size:1rem}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.row{grid-template-columns:1fr}}
+button{background:#f0a832;color:#14100a;border:0;border-radius:8px;padding:11px 18px;font-size:1rem;font-weight:600;cursor:pointer;margin-top:14px}
+pre{background:#0a0d11;border:1px solid #2b333f;border-radius:10px;padding:14px;white-space:pre-wrap;word-break:break-word;font-size:.92rem}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid #2b333f;padding:6px 8px;text-align:left}
+th{background:#1b212b}
+.small{color:#9fb0c3;font-size:.88rem}
+a{color:#7cc4ff}
+.pass{color:#7ee2a0}.fail{color:#ff9c9c}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Panel Schedule Generator</h1>
+<p class="sub">Standard Canadian commercial format — circuits, per-phase connected VA and a balance check, ready for the drawing set.</p>
+<div class="card">
+<div class="row"><div><label>Panel designation</label><input id="pname" type="text" value="LP-1"></div>
+<div><label>System</label><select id="psys"><option selected>208Y/120 V, 3-phase 4-wire</option><option>600Y/347 V, 3-phase 4-wire</option><option>120/240 V, 1-phase 3-wire</option></select></div></div>
+<div class="row"><div><label>Bus rating (A)</label><input id="pbus" type="number" value="225"></div>
+<div><label>Main (A or MLO)</label><input id="pmain" type="text" value="225"></div></div>
+<h2>Add circuits</h2>
+<div class="row"><div><label>Description</label><input id="cdesc" type="text" value="Receptacles — office"></div>
+<div><label>Load type</label><input id="ctype" type="text" value="Receptacle"></div></div>
+<div class="row"><div><label>Connected load (VA)</label><input id="cva" type="number" value="1440"></div>
+<div><label>Poles</label><select id="cpoles"><option selected>1</option><option>2</option><option>3</option></select></div></div>
+<label>Breaker (A)</label><input id="cbrk" type="number" value="20">
+<button onclick="addC()">Add circuit</button>
+<button onclick="demo()">Load demo circuits</button>
+<pre id="out">No circuits yet. Add circuits, or load the demo set.</pre></div>
+<div class="card"><h2>What a complete schedule carries</h2>
+<p class="small">Header: panel designation and location, voltage and system, main breaker or MLO, bus rating, AIC rating, fed-from and feeder information. Per circuit: number (odd down the left, even down the right, A-B-C rotation), description, load type, breaker amps and poles, wire size, connected VA per phase. Summary: connected VA/kVA/amps per phase, a balance check, demand by load type, and the printable door directory. Demand factors are your design inputs — this generator totals connected load and balance; it does not apply CEC Section 8 demand rules for you.</p></div>
+<p class="small">Free tool by <b>Dust 2 Engineering Inc.</b>, Mississauga, Ontario — building permit
+drawings for restaurants and small commercial projects across the GTA, stamped by an Ontario P.Eng.
+Flat rate $3,500–$5,000. Questions or a project to discuss: open an issue in this repository.</p>
+</div>
+<script>
+let CK=[];
+function render(){
+ const sys=document.getElementById('psys').value;
+ const single = sys.indexOf('1-phase')>=0;
+ const per=[0,0,0]; let r1=0, r2=0;
+ let out='PANEL '+document.getElementById('pname').value+' | '+sys+' | Bus '+document.getElementById('pbus').value+' A | Main '+document.getElementById('pmain').value+'\n';
+ out+='CKT  DESCRIPTION                    TYPE           BKR  P  PH     VA\n';
+ CK.forEach((c,i)=>{
+   let ph;
+   if(single){ ph=['A']; per[0]+=c.va; }
+   else if(c.poles===1){ ph=[['A','B','C'][r1%3]]; per[r1%3]+=c.va; r1++; }
+   else if(c.poles===2){ const pair=[['A','B'],['B','C'],['C','A']][r2%3]; ph=pair; per['ABC'.indexOf(pair[0])]+=c.va/2; per['ABC'.indexOf(pair[1])]+=c.va/2; r2++; }
+   else { ph=['A','B','C']; for(let j=0;j<3;j++) per[j]+=c.va/3; }
+   out+=String(i+1).padStart(3)+'  '+c.desc.padEnd(30).slice(0,30)+' '+c.type.padEnd(14).slice(0,14)+' '+String(c.brk).padStart(4)+'  '+c.poles+'  '+ph.join('/').padEnd(5)+' '+Math.round(c.va).toLocaleString('en-US')+'\n';
+ });
+ const f=n=>Math.round(n).toLocaleString('en-US');
+ if(single) out+='Per-phase connected load: A '+f(per[0])+' VA\n';
+ else { out+='Per-phase connected load: A '+f(per[0])+' VA, B '+f(per[1])+' VA, C '+f(per[2])+' VA\n'; const avg=(per[0]+per[1]+per[2])/3; const spread= avg? (Math.max(...per)-Math.min(...per))/avg*100 : 0; out+='Phase balance spread: '+spread.toFixed(1)+'% of average phase load (design target commonly within 10%)\n'; }
+ document.getElementById('out').textContent= CK.length? out : 'No circuits yet. Add circuits, or load the demo set.';
+}
+function addC(){
+ CK.push({desc:document.getElementById('cdesc').value||'Load', type:document.getElementById('ctype').value||'', va:parseFloat(document.getElementById('cva').value)||0, poles:parseInt(document.getElementById('cpoles').value), brk:document.getElementById('cbrk').value});
+ render();
+}
+function demo(){
+ CK=[{desc:'Lighting — sales floor',type:'Lighting',va:3600,poles:1,brk:20},{desc:'Receptacles — office',type:'Receptacle',va:1440,poles:1,brk:20},{desc:'RTU-1',type:'HVAC',va:5400,poles:3,brk:30},{desc:'Water heater',type:'Plumbing',va:4500,poles:2,brk:30},{desc:'Signage',type:'Lighting',va:1200,poles:1,brk:20},{desc:'Kitchen receptacles',type:'Receptacle',va:2000,poles:1,brk:20}];
+ render();
+}
+render();
+</script>
+</body>
+</html>
